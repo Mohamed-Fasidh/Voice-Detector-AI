@@ -1,40 +1,24 @@
 import numpy as np
 import librosa
+
 def extract_features(y, sr):
     features = []
 
-    # MFCC
+    # 1️⃣ MFCCs (SAFE)
     mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=20)
     features.extend(np.mean(mfcc, axis=1))
     features.extend(np.std(mfcc, axis=1))
 
-    # Delta MFCC (important for AI smoothness)
-    delta_mfcc = librosa.feature.delta(mfcc)
-    features.extend(np.mean(delta_mfcc, axis=1))
-
-    # Pitch
-    pitches, magnitudes = librosa.piptrack(y=y, sr=sr)
-    pitch = pitches[pitches > 0]
-    features.append(np.var(pitch) if len(pitch) else 0)
-    features.append(np.mean(pitch) if len(pitch) else 0)
-
-    # Energy
+    # 2️⃣ Energy (SAFE)
     rms = librosa.feature.rms(y=y)[0]
     features.append(np.mean(rms))
-    features.append(np.var(rms))
+    features.append(np.std(rms))
 
-    # Zero Crossing Rate
-    zcr = librosa.feature.zero_crossing_rate(y)[0]
-    features.append(np.mean(zcr))
-    features.append(np.var(zcr))
+    # 3️⃣ Signal Variance (AI voices are more uniform)
+    features.append(np.var(y))
 
-    # Spectral features (AI voices fail here)
-    spec_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
-    features.append(np.mean(spec_centroid))
-    features.append(np.var(spec_centroid))
+    # 4️⃣ Zero-crossing (PURE NUMPY — NO NUMBA)
+    zero_crossings = np.mean(np.abs(np.diff(np.sign(y))))
+    features.append(zero_crossings)
 
-    spec_rolloff = librosa.feature.spectral_rolloff(y=y, sr=sr)[0]
-    features.append(np.mean(spec_rolloff))
-
-    return np.array(features)
-
+    return np.array(features, dtype=np.float32)

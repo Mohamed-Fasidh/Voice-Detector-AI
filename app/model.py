@@ -1,4 +1,5 @@
 import joblib
+import numpy as np
 from app.config import MODEL_PATH
 
 _model = None
@@ -13,21 +14,12 @@ def predict_voice(features):
     model = get_model()
 
     features = features.reshape(1, -1)
-    probs = model.predict_proba(features)[0]
+    proba = model.predict_proba(features)[0]
 
-    human_prob = probs[0]
-    ai_prob = probs[1]
+    ai_prob = float(proba[1])
+    human_prob = float(proba[0])
 
     if ai_prob > human_prob:
-        return (
-            "AI_GENERATED",
-            float(ai_prob),
-            "Unnatural pitch consistency and spectral smoothness detected"
-        )
+        return "AI_GENERATED", ai_prob, "Synthetic speech patterns detected"
     else:
-        return (
-            "HUMAN",
-            float(human_prob),
-            "Natural human speech variability detected"
-        )
-
+        return "HUMAN", human_prob, "Natural human voice variations detected"
