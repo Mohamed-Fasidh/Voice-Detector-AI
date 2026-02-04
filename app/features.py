@@ -1,29 +1,40 @@
 import numpy as np
-
+import librosa
 def extract_features(y, sr):
-    y = y.astype(np.float32)
-
     features = []
 
-    # 1️⃣ Energy
-    energy = np.mean(y ** 2)
-    features.append(energy)
+    # MFCC
+    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=20)
+    features.extend(np.mean(mfcc, axis=1))
+    features.extend(np.std(mfcc, axis=1))
 
-    # 2️⃣ Energy variance
-    features.append(np.var(y ** 2))
+    # Delta MFCC (important for AI smoothness)
+    delta_mfcc = librosa.feature.delta(mfcc)
+    features.extend(np.mean(delta_mfcc, axis=1))
 
-    # 3️⃣ Zero crossing rate (manual, NO librosa)
-    zero_crossings = np.mean(np.abs(np.diff(np.sign(y)))) / 2
-    features.append(zero_crossings)
+    # Pitch
+    pitches, magnitudes = librosa.piptrack(y=y, sr=sr)
+    pitch = pitches[pitches > 0]
+    features.append(np.var(pitch) if len(pitch) else 0)
+    features.append(np.mean(pitch) if len(pitch) else 0)
 
-    # 4️⃣ Amplitude statistics
-    features.append(np.mean(np.abs(y)))
-    features.append(np.std(y))
-    features.append(np.max(np.abs(y)))
+    # Energy
+    rms = librosa.feature.rms(y=y)[0]
+    features.append(np.mean(rms))
+    features.append(np.var(rms))
 
-    # 5️⃣ Simple spectral proxy (FFT)
-    spectrum = np.abs(np.fft.rfft(y))
-    features.append(np.mean(spectrum))
-    features.append(np.var(spectrum))
+    # Zero Crossing Rate
+    zcr = librosa.feature.zero_crossing_rate(y)[0]
+    features.append(np.mean(zcr))
+    features.append(np.var(zcr))
 
-    return np.array(features).reshape(1, -1)
+    # Spectral features (AI voices fail here)
+    spec_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
+    features.append(np.mean(spec_centroid))
+    features.append(np.var(spec_centroid))
+
+    spec_rolloff = librosa.feature.spectral_rolloff(y=y, sr=sr)[0]
+    features.append(np.mean(spec_rolloff))
+
+    return np.array(features)
+

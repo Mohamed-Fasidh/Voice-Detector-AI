@@ -9,21 +9,25 @@ def get_model():
         _model = joblib.load(MODEL_PATH)
     return _model
 
-
 def predict_voice(features):
     model = get_model()
 
-    proba = model.predict_proba(features)[0]
-    human_prob = float(proba[0])
-    ai_prob = float(proba[1])
+    features = features.reshape(1, -1)
+    probs = model.predict_proba(features)[0]
+
+    human_prob = probs[0]
+    ai_prob = probs[1]
 
     if ai_prob > human_prob:
-        classification = "AI_GENERATED"
-        confidence = round(ai_prob, 2)
-        explanation = "Synthetic speech characteristics detected"
+        return (
+            "AI_GENERATED",
+            float(ai_prob),
+            "Unnatural pitch consistency and spectral smoothness detected"
+        )
     else:
-        classification = "HUMAN"
-        confidence = round(human_prob, 2)
-        explanation = "Natural human speech variability detected"
+        return (
+            "HUMAN",
+            float(human_prob),
+            "Natural human speech variability detected"
+        )
 
-    return classification, confidence, explanation
