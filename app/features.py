@@ -9,16 +9,19 @@ def extract_features(y, sr):
     features.extend(np.mean(mfcc, axis=1))
     features.extend(np.std(mfcc, axis=1))
 
-    # 2️⃣ Energy (SAFE)
+    # 2️⃣ RMS Energy (SAFE)
     rms = librosa.feature.rms(y=y)[0]
     features.append(np.mean(rms))
     features.append(np.std(rms))
 
-    # 3️⃣ Signal Variance (AI voices are more uniform)
-    features.append(np.var(y))
+    # 3️⃣ Spectral Centroid (SAFE)
+    centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
+    features.append(np.mean(centroid))
+    features.append(np.std(centroid))
 
-    # 4️⃣ Zero-crossing (PURE NUMPY — NO NUMBA)
-    zero_crossings = np.mean(np.abs(np.diff(np.sign(y))))
-    features.append(zero_crossings)
+    # 4️⃣ Spectral Bandwidth (SAFE)
+    bandwidth = librosa.feature.spectral_bandwidth(y=y, sr=sr)[0]
+    features.append(np.mean(bandwidth))
+    features.append(np.std(bandwidth))
 
     return np.array(features, dtype=np.float32)

@@ -12,14 +12,14 @@ from app.audio_utils import decode_base64_mp3
 from app.features import extract_features
 from app.model import predict_voice
 from app.config import SUPPORTED_LANGUAGES
-
+from typing import Optional
 app = FastAPI(title="AI Voice Detection API")
 
 class VoiceRequest(BaseModel):
     language: str
     audioFormat: str
     audioBase64: str
-
+    
 @app.post("/api/voice-detection")
 def detect_voice(data: VoiceRequest, api_key=Depends(validate_api_key)):
 
