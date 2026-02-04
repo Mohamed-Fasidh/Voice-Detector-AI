@@ -1,6 +1,6 @@
 import joblib
+from app.config import MODEL_PATH
 
-MODEL_PATH = "model/voice_detector.pkl"
 _model = None
 
 def get_model():
@@ -9,19 +9,21 @@ def get_model():
         _model = joblib.load(MODEL_PATH)
     return _model
 
+
 def predict_voice(features):
     model = get_model()
 
-    prob = model.predict_proba(features)[0]
-    prediction = model.predict(features)[0]
+    proba = model.predict_proba(features)[0]
+    human_prob = float(proba[0])
+    ai_prob = float(proba[1])
 
-    label = "AI_GENERATED" if prediction == 1 else "HUMAN"
-    confidence = float(max(prob))
+    if ai_prob > human_prob:
+        classification = "AI_GENERATED"
+        confidence = round(ai_prob, 2)
+        explanation = "Synthetic speech characteristics detected"
+    else:
+        classification = "HUMAN"
+        confidence = round(human_prob, 2)
+        explanation = "Natural human speech variability detected"
 
-    explanation = (
-        "Unnatural pitch consistency and spectral patterns detected"
-        if label == "AI_GENERATED"
-        else "Natural human speech variability detected"
-    )
-
-    return label, confidence, explanation
+    return classification, confidence, explanation
